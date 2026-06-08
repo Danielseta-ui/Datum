@@ -1,0 +1,6 @@
+{
+  "name": "Datum",
+  "description": "Behavior-enforced personal finance system. Automatically structures daily spending, locks emergency savings, and tracks weekly limits.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
