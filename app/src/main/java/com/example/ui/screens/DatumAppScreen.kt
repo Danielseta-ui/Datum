@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -8,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -176,41 +179,51 @@ fun DatumAppScreen(viewModel: DatumViewModel) {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            when (currentTab) {
-                "dashboard" -> DashboardScreen(
-                    wallets = wallets,
-                    logs = logEntries,
-                    alerts = alerts,
-                    viewModel = viewModel,
-                    onOpenAddSpend = { walletId ->
-                        selectedWalletIdForSpend = walletId
-                        showAddSpendDialog = true
-                    }
-                )
-                "payday" -> PaydayPlannerScreen(
-                    config = paydayConfig,
-                    viewModel = viewModel,
-                    step = paydayStep
-                )
-                "weekly" -> WeeklyBudgetScreen(
-                    wallets = wallets,
-                    logs = logEntries,
-                    viewModel = viewModel,
-                    onAddExpense = {
-                        selectedWalletIdForSpend = "CASH"
-                        showAddSpendDialog = true
-                    }
-                )
-                "goals" -> GoalsScreen(
-                    wallets = wallets,
-                    goal = goal,
-                    viewModel = viewModel
-                )
-                "rules" -> RulesScreen(
-                    wallets = wallets,
-                    logs = logEntries,
-                    viewModel = viewModel
-                )
+            AnimatedContent(
+                targetState = currentTab,
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(220, delayMillis = 80)) + 
+                     scaleIn(initialScale = 0.96f, animationSpec = tween(220, delayMillis = 80)))
+                        .togetherWith(fadeOut(animationSpec = tween(120)))
+                },
+                label = "current_tab_animation"
+            ) { targetTab ->
+                when (targetTab) {
+                    "dashboard" -> DashboardScreen(
+                        wallets = wallets,
+                        logs = logEntries,
+                        alerts = alerts,
+                        viewModel = viewModel,
+                        onOpenAddSpend = { walletId ->
+                            selectedWalletIdForSpend = walletId
+                            showAddSpendDialog = true
+                        }
+                    )
+                    "payday" -> PaydayPlannerScreen(
+                        config = paydayConfig,
+                        viewModel = viewModel,
+                        step = paydayStep
+                    )
+                    "weekly" -> WeeklyBudgetScreen(
+                        wallets = wallets,
+                        logs = logEntries,
+                        viewModel = viewModel,
+                        onAddExpense = {
+                            selectedWalletIdForSpend = "CASH"
+                            showAddSpendDialog = true
+                        }
+                    )
+                    "goals" -> GoalsScreen(
+                        wallets = wallets,
+                        goal = goal,
+                        viewModel = viewModel
+                    )
+                    "rules" -> RulesScreen(
+                        wallets = wallets,
+                        logs = logEntries,
+                        viewModel = viewModel
+                    )
+                }
             }
 
             // MODAL 1: EMERGENCY RULES ENGINE CONFIRMATION DIALOG (Interpreting FNB)
@@ -535,14 +548,15 @@ fun DashboardScreen(
         // Core System Balance Banner (Modern Radial gradient look)
         item {
             val totalAssets = wallets.sumOf { it.balance }
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .testTag("total_balance_card")
-            ) {
-                Box(
+            SmoothEntranceContainer(delayMillis = 0) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .testTag("total_balance_card")
+                ) {
+                    Box(
                     modifier = Modifier
                         .background(
                             Brush.linearGradient(
@@ -606,16 +620,19 @@ fun DashboardScreen(
                 }
             }
         }
+        }
 
         // 4 Wallets Segment with custom actions
         item {
-            Text(
-                text = "YOUR SYSTEM WALLETS",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = M3Secondary,
-                letterSpacing = 1.5.sp
-            )
+            SmoothEntranceContainer(delayMillis = 70) {
+                Text(
+                    text = "YOUR SYSTEM WALLETS",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = M3Secondary,
+                    letterSpacing = 1.5.sp
+                )
+            }
         }
 
         item {
@@ -624,36 +641,38 @@ fun DashboardScreen(
             val airtel = wallets.find { it.id == "AIRTEL" }
             val global = wallets.find { it.id == "GLOBAL_CARD" }
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+            SmoothEntranceContainer(delayMillis = 130) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        if (fnb != null) {
-                            WalletGridCard(wallet = fnb, onOpenAddSpend = onOpenAddSpend)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (fnb != null) {
+                                WalletGridCard(wallet = fnb, onOpenAddSpend = onOpenAddSpend)
+                            }
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (cash != null) {
+                                WalletGridCard(wallet = cash, onOpenAddSpend = onOpenAddSpend)
+                            }
                         }
                     }
-                    Box(modifier = Modifier.weight(1f)) {
-                        if (cash != null) {
-                            WalletGridCard(wallet = cash, onOpenAddSpend = onOpenAddSpend)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (airtel != null) {
+                                WalletGridCard(wallet = airtel, onOpenAddSpend = onOpenAddSpend)
+                            }
                         }
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        if (airtel != null) {
-                            WalletGridCard(wallet = airtel, onOpenAddSpend = onOpenAddSpend)
-                        }
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        if (global != null) {
-                            WalletGridCard(wallet = global, onOpenAddSpend = onOpenAddSpend)
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (global != null) {
+                                WalletGridCard(wallet = global, onOpenAddSpend = onOpenAddSpend)
+                            }
                         }
                     }
                 }
@@ -662,95 +681,101 @@ fun DashboardScreen(
 
         // Live alert notification segment
         item {
-            Text(
-                text = "ACTIVE BEHAVIORAL FEED",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                letterSpacing = 1.sp
-            )
+            SmoothEntranceContainer(delayMillis = 200) {
+                Text(
+                    text = "ACTIVE BEHAVIORAL FEED",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    letterSpacing = 1.sp
+                )
+            }
         }
 
         if (alerts.isEmpty()) {
             item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                SmoothEntranceContainer(delayMillis = 260) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        DuoToneIcon(
-                            imageVector = Icons.Default.VerifiedUser,
-                            contentDescription = "OK",
-                            primaryColor = M3Primary,
-                            secondaryColor = M3Secondary.copy(alpha = 0.35f),
-                            size = 24.dp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("All systems nominal. Discipline level: High.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            DuoToneIcon(
+                                imageVector = Icons.Default.VerifiedUser,
+                                contentDescription = "OK",
+                                primaryColor = M3Primary,
+                                secondaryColor = M3Secondary.copy(alpha = 0.35f),
+                                size = 24.dp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("All systems nominal. Discipline level: High.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
         } else {
-            items(alerts.take(4)) { alert ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("alert_item_${alert.id}")
-                ) {
-                    Row(
+            itemsIndexed(alerts.take(4)) { index, alert ->
+                SmoothEntranceContainer(delayMillis = 260 + (index * 60)) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                            .fillMaxWidth()
+                            .testTag("alert_item_${alert.id}")
                     ) {
-                        Box(
+                        Row(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    when (alert.type) {
-                                        "WARNING" -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                                        "SUCCESS" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                        else -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center
+                                .padding(12.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val alertColor = when (alert.type) {
-                                "WARNING" -> MaterialTheme.colorScheme.error
-                                "SUCCESS" -> M3Primary
-                                else -> M3Secondary
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        when (alert.type) {
+                                            "WARNING" -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                                            "SUCCESS" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                            else -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val alertColor = when (alert.type) {
+                                    "WARNING" -> MaterialTheme.colorScheme.error
+                                    "SUCCESS" -> M3Primary
+                                    else -> M3Secondary
+                                }
+                                DuoToneIcon(
+                                    imageVector = when (alert.type) {
+                                        "WARNING" -> Icons.Default.Warning
+                                        "SUCCESS" -> Icons.Default.CheckCircle
+                                        else -> Icons.Default.Info
+                                    },
+                                    contentDescription = alert.type,
+                                    primaryColor = alertColor,
+                                    secondaryColor = alertColor.copy(alpha = 0.35f),
+                                    size = 18.dp
+                                )
                             }
-                            DuoToneIcon(
-                                imageVector = when (alert.type) {
-                                    "WARNING" -> Icons.Default.Warning
-                                    "SUCCESS" -> Icons.Default.CheckCircle
-                                    else -> Icons.Default.Info
-                                },
-                                contentDescription = alert.type,
-                                primaryColor = alertColor,
-                                secondaryColor = alertColor.copy(alpha = 0.35f),
-                                size = 18.dp
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(alert.title, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text(alert.message, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
+                            Text(
+                                text = formatter.format(Date(alert.timestamp)),
+                                fontSize = 8.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(alert.title, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                            Text(alert.message, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-
-                        Text(
-                            text = formatter.format(Date(alert.timestamp)),
-                            fontSize = 8.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
             }
@@ -758,68 +783,75 @@ fun DashboardScreen(
 
         // Weekly progress Bar (Dynamic Tracker)
         item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("weekly_tracker_card")
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("WEEKLY SPENDING RADAR", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
-                            Text("Dynamic balance relative to weekly limit.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(
-                                    if (weeklyRemaining > (weeklyAllowance * 0.2))
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                    else MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
-                                )
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+            SmoothEntranceContainer(delayMillis = 350) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("weekly_tracker_card")
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                if (weeklyRemaining > (weeklyAllowance * 0.2)) "ON TRACK" else "DANGER BREACH",
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (weeklyRemaining > (weeklyAllowance * 0.2)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                            )
+                            Column {
+                                Text("WEEKLY SPENDING RADAR", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                                Text("Dynamic balance relative to weekly limit.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(
+                                        if (weeklyRemaining > (weeklyAllowance * 0.2))
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                        else MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    if (weeklyRemaining > (weeklyAllowance * 0.2)) "ON TRACK" else "DANGER BREACH",
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (weeklyRemaining > (weeklyAllowance * 0.2)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    val percent = if (weeklyAllowance > 0) (spentThisWeek / weeklyAllowance).toFloat().coerceIn(0f, 1f) else 1f
-                    LinearProgressIndicator(
-                        progress = percent,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = if (percent > 0.8f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                    )
+                        val percent = if (weeklyAllowance > 0) (spentThisWeek / weeklyAllowance).toFloat().coerceIn(0f, 1f) else 1f
+                        val animatedPercent by animateFloatAsState(
+                            targetValue = percent,
+                            animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+                            label = "weekly_dashboard_progress_anim"
+                        )
+                        LinearProgressIndicator(
+                            progress = { animatedPercent },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = if (percent > 0.8f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                        )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("SPENT THIS WEEK", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("ZMW ${String.format("%.2f", spentThisWeek)}", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("REMAINING ALLOWANCE", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("ZMW ${String.format("%.2f", weeklyRemaining)}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("SPENT THIS WEEK", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("ZMW ${String.format("%.2f", spentThisWeek)}", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("REMAINING ALLOWANCE", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("ZMW ${String.format("%.2f", weeklyRemaining)}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                 }
@@ -1168,94 +1200,96 @@ fun WeeklyBudgetScreen(
     ) {
         // High Contrast Budget Wheel State styled as Weekly Command Center
         item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("weekly_hud_card")
-            ) {
-                Column(
+            SmoothEntranceContainer(delayMillis = 0) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .testTag("weekly_hud_card")
                 ) {
-                    // Top Dash border
-                    Canvas(modifier = Modifier.fillMaxWidth().height(1.dp)) {
-                        val strokeWidth = 1.dp.toPx()
-                        val intervals = floatArrayOf(12f, 12f)
-                        val pathEffect = PathEffect.dashPathEffect(intervals, 0f)
-                        drawLine(
-                            color = M3Outline,
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, 0f),
-                            strokeWidth = strokeWidth,
-                            pathEffect = pathEffect
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Text(
-                        "WEEKLY SAFE SPENDING",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = M3Primary,
-                        letterSpacing = 2.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "ZMW",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = M3OnBackground,
-                            modifier = Modifier.padding(top = 10.dp, end = 6.dp)
-                        )
-                        Text(
-                            text = String.format("%.0f", remaining),
-                            fontSize = 68.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = FontFamily.SansSerif,
-                            color = M3OnBackground,
-                            letterSpacing = (-1.5).sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Box(
+                    Column(
                         modifier = Modifier
-                            .background(M3AlertPillBg, RoundedCornerShape(50.dp))
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Top Dash border
+                        Canvas(modifier = Modifier.fillMaxWidth().height(1.dp)) {
+                            val strokeWidth = 1.dp.toPx()
+                            val intervals = floatArrayOf(12f, 12f)
+                            val pathEffect = PathEffect.dashPathEffect(intervals, 0f)
+                            drawLine(
+                                color = M3Outline,
+                                start = Offset(0f, 0f),
+                                end = Offset(size.width, 0f),
+                                strokeWidth = strokeWidth,
+                                pathEffect = pathEffect
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
                         Text(
-                            text = "SYSTEM RESET IN 3 DAYS",
-                            color = M3AlertPillText,
+                            "WEEKLY SAFE SPENDING",
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = M3Primary,
+                            letterSpacing = 2.sp
                         )
-                    }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                    // Bottom Dash border
-                    Canvas(modifier = Modifier.fillMaxWidth().height(1.dp)) {
-                        val strokeWidth = 1.dp.toPx()
-                        val intervals = floatArrayOf(12f, 12f)
-                        val pathEffect = PathEffect.dashPathEffect(intervals, 0f)
-                        drawLine(
-                            color = M3Outline,
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, 0f),
-                            strokeWidth = strokeWidth,
-                            pathEffect = pathEffect
-                        )
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "ZMW",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = M3OnBackground,
+                                modifier = Modifier.padding(top = 10.dp, end = 6.dp)
+                            )
+                            Text(
+                                text = String.format("%.0f", remaining),
+                                fontSize = 68.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = FontFamily.SansSerif,
+                                color = M3OnBackground,
+                                letterSpacing = (-1.5).sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .background(M3AlertPillBg, RoundedCornerShape(50.dp))
+                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "SYSTEM RESET IN 3 DAYS",
+                                color = M3AlertPillText,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Bottom Dash border
+                        Canvas(modifier = Modifier.fillMaxWidth().height(1.dp)) {
+                            val strokeWidth = 1.dp.toPx()
+                            val intervals = floatArrayOf(12f, 12f)
+                            val pathEffect = PathEffect.dashPathEffect(intervals, 0f)
+                            drawLine(
+                                color = M3Outline,
+                                start = Offset(0f, 0f),
+                                end = Offset(size.width, 0f),
+                                strokeWidth = strokeWidth,
+                                pathEffect = pathEffect
+                            )
+                        }
                     }
                 }
             }
@@ -1263,108 +1297,116 @@ fun WeeklyBudgetScreen(
 
         // Action Trigger
         item {
-            Button(
-                onClick = onAddExpense,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .testTag("trigger_cash_expense_button")
-            ) {
-                DuoToneIcon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Log Exp",
-                    primaryColor = Color.White,
-                    secondaryColor = Color.White.copy(alpha = 0.35f),
-                    size = 18.dp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("RECORD MANUAL CASH SPEND", fontWeight = FontWeight.Bold)
+            SmoothEntranceContainer(delayMillis = 80) {
+                Button(
+                    onClick = onAddExpense,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("trigger_cash_expense_button")
+                ) {
+                    DuoToneIcon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Log Exp",
+                        primaryColor = Color.White,
+                        secondaryColor = Color.White.copy(alpha = 0.35f),
+                        size = 18.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("RECORD MANUAL CASH SPEND", fontWeight = FontWeight.Bold)
+                }
             }
         }
 
         // Ledgers specific to current week
         item {
-            Text(
-                "DISCIPLINARY EXPENDITURE TRAIL",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                letterSpacing = 1.sp
-            )
+            SmoothEntranceContainer(delayMillis = 140) {
+                Text(
+                    "DISCIPLINARY EXPENDITURE TRAIL",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    letterSpacing = 1.sp
+                )
+            }
         }
 
         val weeklyLogs = logs.filter { it.walletId == "CASH" }
         if (weeklyLogs.isEmpty()) {
             item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        "No manual transactions recorded on Cash Wallet. Budget fully intact.",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
+                SmoothEntranceContainer(delayMillis = 200) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "No manual transactions recorded on Cash Wallet. Budget fully intact.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         } else {
-            items(weeklyLogs) { log ->
+            itemsIndexed(weeklyLogs) { index, log ->
                 val isDebit = log.type == "DEBIT"
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                SmoothEntranceContainer(delayMillis = 200 + (index * 60)) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
                             ) {
-                                Icon(
-                                    imageVector = when (log.category) {
-                                        "Transport" -> Icons.Default.DirectionsCar
-                                        "Food" -> Icons.Default.Store
-                                        else -> Icons.Default.LocalAtm
-                                    },
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    contentDescription = null
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = when (log.category) {
+                                            "Transport" -> Icons.Default.DirectionsCar
+                                            "Food" -> Icons.Default.Store
+                                            else -> Icons.Default.LocalAtm
+                                        },
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        contentDescription = null
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column {
+                                    Text(log.description, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text(
+                                        text = "${log.category} • ${formatter.format(Date(log.timestamp))}",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
 
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column {
-                                Text(log.description, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                Text(
-                                    text = "${log.category} • ${formatter.format(Date(log.timestamp))}",
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Text(
+                                text = "${if (isDebit) "-" else "+"} ZMW ${String.format("%.2f", log.amount)}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = if (isDebit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                fontFamily = FontFamily.Monospace
+                            )
                         }
-
-                        Text(
-                            text = "${if (isDebit) "-" else "+"} ZMW ${String.format("%.2f", log.amount)}",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = if (isDebit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                            fontFamily = FontFamily.Monospace
-                        )
                     }
                 }
             }
@@ -1404,102 +1446,113 @@ fun GoalsScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
-            Text(
-                "DECEMBER MILESTONE RADAR",
-                fontWeight = FontWeight.Black,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                "Tracking cumulative locked FNB deposits.",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            SmoothEntranceContainer(delayMillis = 0) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "DECEMBER MILESTONE RADAR",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Tracking cumulative locked FNB deposits.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
 
         item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = M3GoalCardBg),
-                shape = RoundedCornerShape(28.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("milestone_card")
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = goal.deadlineText.uppercase(),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = M3GoalCardText,
-                            letterSpacing = 0.5.sp
-                        )
-                        Text(
-                            text = "ZMW ${String.format("%,.0f", currentSaved)} / ${String.format("%,.0f", target)}",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = M3GoalCardText.copy(alpha = 0.7f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    LinearProgressIndicator(
-                        progress = { progressPercent },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(12.dp)
-                            .clip(RoundedCornerShape(6.dp)),
-                        color = M3Primary,
-                        trackColor = M3Surface
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("ACCUMULATED FNB VAULT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = M3GoalCardText.copy(alpha = 0.61f))
-                            Text("ZMW ${String.format("%.2f", currentSaved)}", fontWeight = FontWeight.Black, fontSize = 16.sp, color = M3GoalCardText)
+            SmoothEntranceContainer(delayMillis = 80) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = M3GoalCardBg),
+                    shape = RoundedCornerShape(28.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("milestone_card")
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                text = goal.deadlineText.uppercase(),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = M3GoalCardText,
+                                letterSpacing = 0.5.sp
+                            )
+                            Text(
+                                text = "ZMW ${String.format("%,.0f", currentSaved)} / ${String.format("%,.0f", target)}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = M3GoalCardText.copy(alpha = 0.7f)
+                            )
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("TARGET GOAL LIMIT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = M3GoalCardText.copy(alpha = 0.61f))
-                            Text("ZMW ${String.format("%.2f", target)}", fontWeight = FontWeight.Black, fontSize = 16.sp, color = M3GoalCardText)
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        val animatedProgressPercent by animateFloatAsState(
+                            targetValue = progressPercent,
+                            animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+                            label = "milestone_progress_anim"
+                        )
+                        LinearProgressIndicator(
+                            progress = { animatedProgressPercent },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(12.dp)
+                                .clip(RoundedCornerShape(6.dp)),
+                            color = M3Primary,
+                            trackColor = M3Surface
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("ACCUMULATED FNB VAULT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = M3GoalCardText.copy(alpha = 0.61f))
+                                Text("ZMW ${String.format("%.2f", currentSaved)}", fontWeight = FontWeight.Black, fontSize = 16.sp, color = M3GoalCardText)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("TARGET GOAL LIMIT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = M3GoalCardText.copy(alpha = 0.61f))
+                                Text("ZMW ${String.format("%.2f", target)}", fontWeight = FontWeight.Black, fontSize = 16.sp, color = M3GoalCardText)
+                            }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    HorizontalDivider(color = M3GoalCardText.copy(alpha = 0.15f))
+                        HorizontalDivider(color = M3GoalCardText.copy(alpha = 0.15f))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    if (currentSaved >= target) {
-                        Text(
-                            "🎉 CONGRATULATIONS: System disciplined target reached. Vault secured.",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = M3GoalCardText
-                        )
-                    } else {
-                        // Progress months projection logic (assuming 1500 monthly)
-                        val needed = target - currentSaved
-                        val months = Math.ceil(needed / monthlyTargetSavings).toInt()
-                        Text(
-                            "STATUS: YOU ARE ON TRACK\nNeed $months more payday splits (+ZMW 1,500/mo) to reinforce.",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.tertiary,
-                            lineHeight = 14.sp
-                        )
+                        if (currentSaved >= target) {
+                            Text(
+                                "🎉 CONGRATULATIONS: System disciplined target reached. Vault secured.",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = M3GoalCardText
+                            )
+                        } else {
+                            // Progress months projection logic (assuming 1500 monthly)
+                            val needed = target - currentSaved
+                            val months = Math.ceil(needed / monthlyTargetSavings).toInt()
+                            Text(
+                                "STATUS: YOU ARE ON TRACK\nNeed $months more payday splits (+ZMW 1,500/mo) to reinforce.",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                lineHeight = 14.sp
+                            )
+                        }
                     }
                 }
             }
@@ -1507,52 +1560,56 @@ fun GoalsScreen(
 
         // Monthly Progression Breakdown Tracker (July -> November Target)
         item {
-            Text(
-                "AUTO MONTHLY ENFORCEMENT BREAKDOWN",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                letterSpacing = 1.sp
-            )
+            SmoothEntranceContainer(delayMillis = 160) {
+                Text(
+                    "AUTO MONTHLY ENFORCEMENT BREAKDOWN",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    letterSpacing = 1.sp
+                )
+            }
         }
 
         item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    listOf(
-                        MonthGoalItem("July Target Increment", 1500.0, currentSaved >= 1500.0),
-                        MonthGoalItem("August Target Increment", 3000.0, currentSaved >= 3000.0),
-                        MonthGoalItem("September Target Increment", 4500.0, currentSaved >= 4500.0),
-                        MonthGoalItem("October Target Increment", 6000.0, currentSaved >= 6000.0),
-                        MonthGoalItem("November final reinforce", 7500.0, currentSaved >= 7500.0)
-                    ).forEach { month ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                DuoToneIcon(
-                                    imageVector = if (month.completed) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                                    primaryColor = if (month.completed) M3Primary else M3Outline,
-                                    secondaryColor = if (month.completed) M3Primary.copy(alpha = 0.35f) else M3Outline.copy(alpha = 0.35f),
-                                    contentDescription = null,
-                                    size = 16.dp
+            SmoothEntranceContainer(delayMillis = 220) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        listOf(
+                            MonthGoalItem("July Target Increment", 1500.0, currentSaved >= 1500.0),
+                            MonthGoalItem("August Target Increment", 3000.0, currentSaved >= 3000.0),
+                            MonthGoalItem("September Target Increment", 4500.0, currentSaved >= 4500.0),
+                            MonthGoalItem("October Target Increment", 6000.0, currentSaved >= 6000.0),
+                            MonthGoalItem("November final reinforce", 7500.0, currentSaved >= 7500.0)
+                        ).forEach { month ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    DuoToneIcon(
+                                        imageVector = if (month.completed) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                        primaryColor = if (month.completed) M3Primary else M3Outline,
+                                        secondaryColor = if (month.completed) M3Primary.copy(alpha = 0.35f) else M3Outline.copy(alpha = 0.35f),
+                                        contentDescription = null,
+                                        size = 16.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(month.name, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Text(
+                                    "ZMW ${String.format("%.0f", month.criticalAmount)}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (month.completed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(month.name, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
-                            Text(
-                                "ZMW ${String.format("%.0f", month.criticalAmount)}",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (month.completed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         }
                     }
                 }
@@ -1561,49 +1618,51 @@ fun GoalsScreen(
 
         // Goal Editing panel
         item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("CUSTOMIZE ARCHITECT TARGET", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
+            SmoothEntranceContainer(delayMillis = 280) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("CUSTOMIZE ARCHITECT TARGET", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    OutlinedTextField(
-                        value = customTargetInput,
-                        onValueChange = { customTargetInput = it },
-                        label = { Text("Target Amount (ZMW)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        OutlinedTextField(
+                            value = customTargetInput,
+                            onValueChange = { customTargetInput = it },
+                            label = { Text("Target Amount (ZMW)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                    OutlinedTextField(
-                        value = customDeadlineInput,
-                        onValueChange = { customDeadlineInput = it },
-                        label = { Text("Goal Title Timeline") },
-                        placeholder = { Text("e.g. ZMW 7,500 by November") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        OutlinedTextField(
+                            value = customDeadlineInput,
+                            onValueChange = { customDeadlineInput = it },
+                            label = { Text("Goal Title Timeline") },
+                            placeholder = { Text("e.g. ZMW 7,500 by November") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = {
-                            val tVal = customTargetInput.toDoubleOrNull()
-                            if (tVal != null && tVal > 0.0) {
-                                viewModel.updateGoalTarget(tVal, customDeadlineInput.ifEmpty { "by Deadline" })
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("apply_goal_changes")
-                    ) {
-                        Text("Apply Goal Configuration")
+                        Button(
+                            onClick = {
+                                val tVal = customTargetInput.toDoubleOrNull()
+                                if (tVal != null && tVal > 0.0) {
+                                    viewModel.updateGoalTarget(tVal, customDeadlineInput.ifEmpty { "by Deadline" })
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("apply_goal_changes")
+                        ) {
+                            Text("Apply Goal Configuration")
+                        }
                     }
                 }
             }
@@ -1632,84 +1691,95 @@ fun RulesScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text(
-                "SYSTEM ENFORCEMENT ENGINE",
-                fontWeight = FontWeight.Black,
-                fontSize = 14.sp,
-                fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                "These behavior-control rules are hard-coded to secure asset longevity.",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            SmoothEntranceContainer(delayMillis = 0) {
+                Column {
+                    Text(
+                        "SYSTEM ENFORCEMENT ENGINE",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "These behavior-control rules are hard-coded to secure asset longevity.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
 
         // Display 4 Rules card set
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                RuleDetailCard(
-                    title = "RULE 1: Locked Vault Gateway (FNB)",
-                    description = "FNB balance is completely locked. Outflows can only occur if the user selects Medical, Transport, or Survival Food override justifications. Non-emergency attempts are hard-blocked.",
-                    icon = Icons.Default.Lock,
-                    active = true,
-                    color = MaterialTheme.colorScheme.error
-                )
-                RuleDetailCard(
-                    title = "RULE 2: Payday Allocation Enforcer",
-                    description = "On the 1st of every month, salaries (ZMW 3,500) are mapped immediately. 1,500 FNB, 540 Transport, 100 Spotify and remaining CASH. Transfer rates boundaries are strictly enforced.",
-                    icon = Icons.Default.Check,
-                    active = true,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                RuleDetailCard(
-                    title = "RULE 3: Double-Buffer Subscription Lock",
-                    description = "Global card balance is strictly limited to Spotify deductions (ZMW 100). This prevents subscription spill-over into grocery or emergency cash.",
-                    icon = Icons.Default.CreditCard,
-                    active = true,
-                    color = MaterialTheme.colorScheme.secondary
-                )
+            SmoothEntranceContainer(delayMillis = 80) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    RuleDetailCard(
+                        title = "RULE 1: Locked Vault Gateway (FNB)",
+                        description = "FNB balance is completely locked. Outflows can only occur if the user selects Medical, Transport, or Survival Food override justifications. Non-emergency attempts are hard-blocked.",
+                        icon = Icons.Default.Lock,
+                        active = true,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    RuleDetailCard(
+                        title = "RULE 2: Payday Allocation Enforcer",
+                        description = "On the 1st of every month, salaries (ZMW 3,500) are mapped immediately. 1,500 FNB, 540 Transport, 100 Spotify and remaining CASH. Transfer rates boundaries are strictly enforced.",
+                        icon = Icons.Default.Check,
+                        active = true,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    RuleDetailCard(
+                        title = "RULE 3: Double-Buffer Subscription Lock",
+                        description = "Global card balance is strictly limited to Spotify deductions (ZMW 100). This prevents subscription spill-over into grocery or emergency cash.",
+                        icon = Icons.Default.CreditCard,
+                        active = true,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
         }
 
         // Audit Trail of Emergency Withdrawals
         item {
-            Text(
-                "FNB EMERGENCY AUDIT LOG",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                letterSpacing = 1.sp
-            )
+            SmoothEntranceContainer(delayMillis = 150) {
+                Text(
+                    "FNB EMERGENCY AUDIT LOG",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    letterSpacing = 1.sp
+                )
+            }
         }
 
         // Collect FNB DEBIT logs
         val emergencyLogs = logs.filter { it.walletId == "FNB" && it.type == "DEBIT" }
         if (emergencyLogs.isEmpty()) {
             item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        "No emergency withdrawals found. FNB compliance status is 100% disciplined.",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
+                SmoothEntranceContainer(delayMillis = 210) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "No emergency withdrawals found. FNB compliance status is 100% disciplined.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         } else {
-            items(emergencyLogs) { log ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+            itemsIndexed(emergencyLogs) { index, log ->
+                SmoothEntranceContainer(delayMillis = 210 + (index * 60)) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1759,6 +1829,7 @@ fun RulesScreen(
                     }
                 }
             }
+        }
         }
     }
 }
@@ -1963,6 +2034,37 @@ fun DuoToneIcon(
             tint = primaryColor,
             modifier = Modifier.fillMaxSize()
         )
+    }
+}
+
+@Composable
+fun SmoothEntranceContainer(
+    delayMillis: Int = 0,
+    durationMillis: Int = 380,
+    content: @Composable () -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = durationMillis, delayMillis = delayMillis, easing = FastOutSlowInEasing),
+        label = "entrance_alpha"
+    )
+    val offsetY by animateFloatAsState(
+        targetValue = if (visible) 0f else 15f,
+        animationSpec = tween(durationMillis = durationMillis, delayMillis = delayMillis, easing = FastOutSlowInEasing),
+        label = "entrance_offset"
+    )
+    Box(
+        modifier = Modifier
+            .graphicsLayer {
+                this.alpha = alpha
+                this.translationY = offsetY
+            }
+    ) {
+        content()
     }
 }
 
